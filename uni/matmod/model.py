@@ -4,7 +4,7 @@ from PIL import Image
 
 class Model:
     def __init__(self):
-        # user input as constants
+        # user input as constants | arrays of constants
         self.N = 0
         self.As = None
         self.Ds = None
@@ -13,17 +13,16 @@ class Model:
         self.It = 0
         self.Ix = 0
         self.Iy = 0
-
-        # user input as images + autodetect lx and ly while setting f_currents0
+        # user input as images
         self.f_currents = None
+        # autodetect lx and ly while init 0 step
         self.lx = 0
         self.ly = 0
-
         # next step and render adaptation of func
         self.f_nexts = None
         self.f_renders = None
+        # utility dict
         self.N2irgb = None
-
         # todo user input, will be implemented later
         self.axs = None
         self.bxs = None
@@ -94,6 +93,6 @@ class Model:
                            - 2 * step_func) / self.Ix ** 2
                            + (self.f_currents[img, i, j + 1, color] + self.f_currents[img, i, j - 1, color]
                            - 2 * step_func) / self.Iy ** 2)
-                    self.f_nexts[img, i, j, color] = int(val > 0) * val
+                    self.f_nexts[img, i, j, color] = int(val > 1) * val
                     self.f_renders[img, i, j, color] = \
                         np.uint8(int(val > 0) * val * int(val <= 255) + 255 * int(val > 255))
