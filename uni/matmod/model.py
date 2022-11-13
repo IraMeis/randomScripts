@@ -76,7 +76,7 @@ class Model:
             self.N2irgb[i] = (np.uint8(i / 3), np.uint8(i % 3))
 
     def __make_sum_for_Ni(self, func_number, i, j):
-        summ = 0
+        summ = float(0)
         func_value = self.f_currents[self.N2irgb[func_number][0], i, j, self.N2irgb[func_number][1]]
         for func in range(self.N):
             # indexes of image and color (species id)

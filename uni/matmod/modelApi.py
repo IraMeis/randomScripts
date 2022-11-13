@@ -3,8 +3,8 @@ Run a Flask REST API
 """
 
 import argparse
+import sys
 import threading
-import time
 import numpy as np
 import io
 from flask import Flask, request, send_file
@@ -16,18 +16,15 @@ from uni.matmod.model import Model
 
 def refresh_image():
     global model
-    if model.is_running:
+    while model.is_running:
         model.calculate_f_nexts_update_f_renders()
-    else:
-        time.sleep(10)
-    refresh_image()
+    sys.exit(0)
 
 
 app = Flask(__name__)
 cors = CORS(app)
 app.config['CORS_HEADERS'] = 'Content-Type'
 model = None
-th = threading.Thread(target=refresh_image, daemon=True)
 
 
 @app.route('/api/matmod/new', methods=["POST"])
@@ -55,6 +52,7 @@ def create_model():
     for i in range(int((N - 1) / 3) + 1):
         imgs[i].close()
     model.is_running = True
+    th = threading.Thread(target=refresh_image, daemon=True)
     th.start()
     return "", status.HTTP_200_OK
 
@@ -69,6 +67,26 @@ def send_img(numb):
     img.save(img_io, 'JPEG')
     img_io.seek(0)
     return send_file(img_io, mimetype='image/jpeg')
+
+
+@app.route('/api/matmod/pp', methods=["POST"])
+@cross_origin()
+def play_pause():
+    if not model.is_running:
+        model.is_running = True
+        th = threading.Thread(target=refresh_image, daemon=True)
+        th.start()
+    else:
+        model.is_running = False
+    return "", status.HTTP_200_OK
+
+
+@app.route('/api/matmod/stop', methods=["POST"])
+@cross_origin()
+def stop():
+    global model
+    model = None
+    return "", status.HTTP_200_OK
 
 
 if __name__ == "__main__":
