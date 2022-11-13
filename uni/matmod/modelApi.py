@@ -5,10 +5,9 @@ Run a Flask REST API
 import argparse
 import threading
 import time
-
 import numpy as np
 import io
-from flask import Flask, request
+from flask import Flask, request, send_file
 from PIL import Image
 from flask_cors import CORS, cross_origin
 from flask_api import status
@@ -18,10 +17,8 @@ from uni.matmod.model import Model
 def refresh_image():
     global model
     if model.is_running:
-        print("1")
         model.calculate_f_nexts_update_f_renders()
     else:
-        print("2")
         time.sleep(10)
     refresh_image()
 
@@ -39,9 +36,9 @@ def create_model():
     global model
     data = request.form.to_dict()
     N = np.int_(data["N"])
-    As = np.array(list(map(float, data["As"].split(','))))
-    Ds = np.array(list(map(float, data["Ds"].split(','))))
-    matrix = np.reshape(np.array(list(map(float, data["matrix"].split(',')))), (N, N))
+    As = np.array(list(map(float, data["As"].split(','))), dtype=np.float_)
+    Ds = np.array(list(map(float, data["Ds"].split(','))), dtype=np.float_)
+    matrix = np.reshape(np.array(list(map(float, data["matrix"].split(','))), dtype=np.float_), (N, N))
     It = float(data["It"])
     Iy = float(data["Iy"])
     Ix = float(data["Ix"])
@@ -60,6 +57,18 @@ def create_model():
     model.is_running = True
     th.start()
     return "", status.HTTP_200_OK
+
+
+@app.route('/api/matmod/update/<numb>', methods=["GET"])
+@cross_origin()
+def send_img(numb):
+    img_io = io.BytesIO()
+    img = Image.fromarray(model.f_renders[int(numb)])
+    sw, sh = img.size
+    img = img.resize((int(sw * 4), int(sh * 4)))
+    img.save(img_io, 'JPEG')
+    img_io.seek(0)
+    return send_file(img_io, mimetype='image/jpeg')
 
 
 if __name__ == "__main__":

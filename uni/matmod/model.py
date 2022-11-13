@@ -57,6 +57,7 @@ class Model:
         self.lx = self.f_renders[0].shape[0]
         self.ly = self.f_renders[0].shape[1]
         self.__make_dict()
+        self.__make_null_borders()
 
     def __make_resize(self, imgs: list, max_dim=200):
         for i in range(len(imgs)):
@@ -83,6 +84,19 @@ class Model:
             color = self.N2irgb[func][1]
             summ += self.f_currents[img, i, j, color] * func_value * self.matrix[func_number, func]
         return summ
+
+    def __make_null_borders(self):
+        for func in range(self.N):
+            img_pos = self.N2irgb[func][0]
+            img_n = self.f_nexts[img_pos]
+            img_r = self.f_renders[img_pos]
+            for i in [0, self.lx - 1]:
+                    img_n[i] = np.zeros((self.ly, 3), dtype=np.float_)
+                    img_r[i] = np.zeros((self.ly, 3), dtype=np.uint8)
+            for j in [0, self.ly - 1]:
+                for i in range(1, self.lx - 1):
+                    img_n[i, j] = np.zeros(3, dtype=np.float_)
+                    img_r[i, j] = np.zeros(3, dtype=np.uint8)
 
     def calculate_f_nexts_update_f_renders(self):
         self.f_currents = self.f_nexts
