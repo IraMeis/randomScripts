@@ -23,6 +23,7 @@ class Model:
         self.f_renders = None
         # utility dict
         self.N2irgb = None
+        self.max_dim = 200
         # todo user input, will be implemented later
         self.axs = None
         self.bxs = None
@@ -59,15 +60,15 @@ class Model:
         self.__make_dict()
         self.__make_null_borders()
 
-    def __make_resize(self, imgs: list, max_dim=200):
+    def __make_resize(self, imgs: list):
         for i in range(len(imgs)):
             w, h = imgs[i].size
-            if w < max_dim and h < max_dim:
+            if w < self.max_dim and h < self.max_dim:
                 continue
             if w > h:
-                return tuple([int(max_dim), int(h / w * max_dim)])
+                return tuple([int(self.max_dim), int(h / w * self.max_dim)])
             else:
-                return tuple([int(w / h * max_dim), int(max_dim)])
+                return tuple([int(w / h * self.max_dim), int(self.max_dim)])
         return imgs[0].size
 
     def __make_dict(self):
