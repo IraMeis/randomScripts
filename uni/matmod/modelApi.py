@@ -15,10 +15,14 @@ from uni.matmod.model import Model
 
 
 def refresh_image():
-    global model
-    while model.is_running:
-        model.calculate_f_nexts_update_f_renders()
-    sys.exit(0)
+    try:
+        global model
+        while model.is_running:
+            model.calculate_f_nexts_update_f_renders()
+    except AttributeError:
+        pass
+    finally:
+        sys.exit(0)
 
 
 app = Flask(__name__)
