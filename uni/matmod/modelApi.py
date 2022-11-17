@@ -54,17 +54,27 @@ def create_model():
     It = np.float_(data["It"])
     Iy = np.float_(data["Iy"])
     Ix = np.float_(data["Ix"])
+    is_bord = bool(int(data["isBord"]))
     model = Model(N=N, As=As, Ds=Ds, matrix=matrix, It=It, Iy=Iy, Ix=Ix)
     imgs = []
-    for i in range(int((N - 1) / 3) + 1):
+    for i in range(Model.get_pic_amount(N)):
         try:
             file = request.files[str(i)]
             imgs.append(Image.open(io.BytesIO(file.read())))
         except Exception as e:
             print(e)
             return "BAD REQUEST", status.HTTP_400_BAD_REQUEST
-    model.set_f_nexts0_set_f_renders0(imgs)
-    for i in range(int((N - 1) / 3) + 1):
+    if is_bord:
+        import json
+        data = json.load(io.BytesIO(request.files['borders'].read()))
+        borders = {'ax': np.array(data['ax'], dtype=np.uint8),
+                   'ay': np.array(data['ay'], dtype=np.uint8),
+                   'bx': np.array(data['bx'], dtype=np.uint8),
+                   'by': np.array(data['by'], dtype=np.uint8)}
+        model.set_f_nexts0_set_f_renders0(imgs=imgs, borders=borders)
+    else:
+        model.set_f_nexts0_set_f_renders0(imgs)
+    for i in range(Model.get_pic_amount(N)):
         imgs[i].close()
     model.is_running = True
     th = threading.Thread(target=refresh_image, daemon=True)

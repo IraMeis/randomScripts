@@ -3,6 +3,8 @@ import numpy as np
 
 
 class Model:
+    max_dim = 200
+
     def __init__(self, N=0, As=None, Ds=None, matrix=None, T=0, It=0, Ix=0, Iy=0):
         # user input as constants | arrays of constants
         self.N = N
@@ -23,24 +25,19 @@ class Model:
         self.f_renders = None
         # utility dict
         self.N2irgb = None
-        self.max_dim = 200
-        # todo user input, will be implemented later
-        self.axs = None
-        self.bxs = None
-        self.ays = None
-        self.bys = None
         # run control param
         self.is_running = False
 
-    def set_f_nexts0_set_f_renders0(self, imgs: list, resize: tuple = None):
+    def set_f_nexts0_set_f_renders0(self, imgs: list, resize: tuple = None, borders: dict = None) -> None:
         if self.N < 1 or self.N > 3 * len(imgs):
             raise ValueError("Incorrect number of images for given N = {0}".format(self.N))
-        self.f_renders = []
+        self.__make_dict()
 
         rs = None
         if not resize:
             rs = self.__make_resize(imgs)
 
+        self.f_renders = []
         for i in range(len(imgs)):
             if not imgs[i].mode == 'RGB':
                 raise ValueError("Incorrect image format {0}".format(imgs[i].format))
@@ -53,12 +50,14 @@ class Model:
             if self.N >= (i + 1) * 3:
                 break
         self.f_renders = np.array(self.f_renders)
-        self.f_nexts = np.empty_like(self.f_renders, dtype=np.float_)
-        self.f_nexts[:] = self.f_renders.astype(np.float_)
         self.lx = self.f_renders[0].shape[0]
         self.ly = self.f_renders[0].shape[1]
-        self.__make_dict()
-        self.__make_null_borders()
+        if borders:
+            self.__init_t_const_borders(borders)
+        else:
+            self.__init_null_borders()
+        self.f_nexts = np.empty_like(self.f_renders, dtype=np.float_)
+        self.f_nexts[:] = self.f_renders.astype(np.float_)
 
     def __make_resize(self, imgs: list):
         for i in range(len(imgs)):
@@ -72,9 +71,7 @@ class Model:
         return imgs[0].size
 
     def __make_dict(self):
-        self.N2irgb = {}
-        for i in range(self.N):
-            self.N2irgb[i] = (np.uint8(i / 3), np.uint8(i % 3))
+        self.N2irgb = Model.make_dict(self.N)
 
     def __make_sum_for_Ni(self, func_number, i, j):
         summ = np.float_(0)
@@ -86,21 +83,34 @@ class Model:
             summ += self.f_currents[img, i, j, color] * func_value * self.matrix[func_number, func]
         return summ
 
-    def __make_null_borders(self):
-        for func in range(self.N):
-            img_pos = self.N2irgb[func][0]
-            img_n = self.f_nexts[img_pos]
-            img_r = self.f_renders[img_pos]
+    def __copy_borders(self):
+        for img_index in range(Model.get_pic_amount(self.N)):
             for i in [0, self.lx - 1]:
-                    img_n[i] = np.zeros((self.ly, 3), dtype=np.float_)
-                    img_r[i] = np.zeros((self.ly, 3), dtype=np.uint8)
-            for j in [0, self.ly - 1]:
-                for i in range(1, self.lx - 1):
-                    img_n[i, j] = np.zeros(3, dtype=np.float_)
-                    img_r[i, j] = np.zeros(3, dtype=np.uint8)
+                self.f_nexts[img_index, i] = self.f_currents[img_index, i].copy()
+            for i in range(1, self.lx - 1):
+                self.f_nexts[img_index, i, 0] = self.f_currents[img_index, i, 0].copy()
+                self.f_nexts[img_index, i, self.ly - 1] = self.f_currents[img_index, i, self.ly - 1].copy()
+
+    def __init_null_borders(self):
+        for img_index in range(Model.get_pic_amount(self.N)):
+            for i in [0, self.lx - 1]:
+                self.f_renders[img_index, i] = np.zeros((self.ly, 3), dtype=np.uint8)
+            for i in range(1, self.lx - 1):
+                self.f_renders[img_index, i, 0] = np.zeros(3, dtype=np.uint8)
+                self.f_renders[img_index, i, self.ly - 1] = np.zeros(3, dtype=np.uint8)
+
+    def __init_t_const_borders(self, borders: dict):
+        for img_index in range(Model.get_pic_amount(self.N)):
+            for i in range(1, self.lx - 1):
+                self.f_renders[img_index, i, 0] = borders['ay'][img_index, i]
+                self.f_renders[img_index, i, self.ly - 1] = borders['by'][img_index, i]
+            for i in range(self.ly):
+                self.f_renders[img_index, 0, i] = borders['bx'][img_index, i]
+                self.f_renders[img_index, self.lx - 1, i] = borders['ax'][img_index, i]
 
     def calculate_f_nexts_update_f_renders(self):
         self.f_currents = self.f_nexts
+        self.f_nexts = np.empty_like(self.f_currents)
         self.f_nexts[:] = self.f_currents
         start = time.perf_counter()
         for func in range(self.N):
@@ -121,3 +131,18 @@ class Model:
                     img_r[i, j, color] = np.uint8(int(val > 0) * val * int(val <= 255) + 255 * int(val > 255))
         stop = time.perf_counter()
         print(f"Calculated in {stop - start:0.5f} seconds")
+
+    @staticmethod
+    def get_pic_amount(n):
+        return int((n - 1) / 3 + 1)
+
+    @staticmethod
+    def make_dict(n):
+        d = {}
+        for i in range(n):
+            d[i] = (np.uint8(i / 3), np.uint8(i % 3))
+        return d
+
+    @staticmethod
+    def to_rgb_value(val):
+        return np.uint8(int(val > 0) * val * int(val <= 255) + 255 * int(val > 255))
