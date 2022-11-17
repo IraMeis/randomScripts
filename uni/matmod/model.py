@@ -3,7 +3,7 @@ import numpy as np
 
 
 class Model:
-    max_dim = 200
+    max_dim = 150
 
     def __init__(self, N=0, As=None, Ds=None, matrix=None, T=0, It=0, Ix=0, Iy=0):
         # user input as constants | arrays of constants
@@ -38,7 +38,7 @@ class Model:
             rs = self.__make_resize(imgs)
 
         self.f_renders = []
-        for i in range(len(imgs)):
+        for i in range(Model.get_pic_amount(self.N)):
             if not imgs[i].mode == 'RGB':
                 raise ValueError("Incorrect image format {0}".format(imgs[i].format))
             if resize:
@@ -47,8 +47,7 @@ class Model:
                 imgs[i] = imgs[i].resize(rs)
             self.f_renders.append(np.array(imgs[i]))
             print("Image with (w, h) = {0} processed".format(imgs[i].size))
-            if self.N >= (i + 1) * 3:
-                break
+
         self.f_renders = np.array(self.f_renders)
         self.lx = self.f_renders[0].shape[0]
         self.ly = self.f_renders[0].shape[1]
@@ -110,7 +109,7 @@ class Model:
 
     def calculate_f_nexts_update_f_renders(self):
         self.f_currents = self.f_nexts
-        self.f_nexts = np.empty_like(self.f_currents)
+        # self.f_nexts = np.empty_like(self.f_currents)
         self.f_nexts[:] = self.f_currents
         start = time.perf_counter()
         for func in range(self.N):
