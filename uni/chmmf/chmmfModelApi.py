@@ -3,15 +3,9 @@ Run a Flask REST API
 """
 
 import argparse
-import sys
-import threading
-import numpy as np
 import io
 from flask import Flask, request, send_file
-from PIL import Image
 from flask_cors import CORS, cross_origin
-from flask_api import status
-
 from uni.chmmf.chmmfModel import ChmmfModel
 
 app = Flask(__name__)
