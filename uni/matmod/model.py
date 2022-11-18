@@ -109,7 +109,7 @@ class Model:
 
     def calculate_f_nexts_update_f_renders(self):
         self.f_currents = self.f_nexts
-        # self.f_nexts = np.empty_like(self.f_currents)
+        self.f_nexts = np.empty_like(self.f_currents)
         self.f_nexts[:] = self.f_currents
         start = time.perf_counter()
         for func in range(self.N):
