@@ -29,20 +29,21 @@ def model_by_t():
     data = request.form.to_dict()
     isx = bool(int(data["isxlim"]))
     isy = bool(int(data["isylim"]))
+    ind = list(map(int, data["indt"].split(',')))
 
     model = parse_request_for_model(data)
     matrix = model.schema_solution()
 
     if isy and isx:
-        plt = model.showPlotsByT(matrix, [10],
+        plt = model.showPlotsByT(matrix=matrix, ind=ind,
                                  ylim=tuple(map(float, data["ylim"].split(','))),
                                  xlim=tuple(map(float, data["xlim"].split(','))))
     elif isx:
-        plt = model.showPlotsByT(matrix, [10], xlim=tuple(map(float, data["xlim"].split(','))))
+        plt = model.showPlotsByT(matrix=matrix, ind=ind, xlim=tuple(map(float, data["xlim"].split(','))))
     elif isy:
-        plt = model.showPlotsByT(matrix, [10], ylim=tuple(map(float, data["ylim"].split(','))))
+        plt = model.showPlotsByT(matrix=matrix, ind=ind, ylim=tuple(map(float, data["ylim"].split(','))))
     else:
-        plt = model.showPlotsByT(matrix, [10])
+        plt = model.showPlotsByT(matrix=matrix, ind=ind)
 
     img = io.BytesIO()
     plt.savefig(img)
@@ -56,20 +57,21 @@ def model_by_r():
     data = request.form.to_dict()
     isx = bool(int(data["isxlim"]))
     isy = bool(int(data["isylim"]))
+    ind = list(map(int, data["indr"].split(',')))
 
     model = parse_request_for_model(data)
     matrix = model.schema_solution()
 
     if isy and isx:
-        plt = model.showPlotsByR(matrix, [10],
+        plt = model.showPlotsByR(matrix=matrix, ind=ind,
                                  ylim=tuple(map(float, data["ylim"].split(','))),
                                  xlim=tuple(map(float, data["xlim"].split(','))))
     elif isx:
-        plt = model.showPlotsByR(matrix, [10], xlim=tuple(map(float, data["xlim"].split(','))))
+        plt = model.showPlotsByR(matrix=matrix, ind=ind, xlim=tuple(map(float, data["xlim"].split(','))))
     elif isy:
-        plt = model.showPlotsByR(matrix, [10], ylim=tuple(map(float, data["ylim"].split(','))))
+        plt = model.showPlotsByR(matrix=matrix, ind=ind, ylim=tuple(map(float, data["ylim"].split(','))))
     else:
-        plt = model.showPlotsByR(matrix, [10])
+        plt = model.showPlotsByR(matrix=matrix, ind=ind)
 
     img = io.BytesIO()
     plt.savefig(img)
