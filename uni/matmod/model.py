@@ -59,15 +59,10 @@ class Model:
         self.f_nexts[:] = self.f_renders.astype(np.float_)
 
     def __make_resize(self, imgs: list):
+        sizes = []
         for i in range(len(imgs)):
-            w, h = imgs[i].size
-            if w < self.max_dim and h < self.max_dim:
-                continue
-            if w > h:
-                return tuple([int(self.max_dim), int(h / w * self.max_dim)])
-            else:
-                return tuple([int(w / h * self.max_dim), int(self.max_dim)])
-        return imgs[0].size
+            sizes.append(imgs[i].size)
+        return self.make_resize(sizes, self.max_dim)
 
     def __make_dict(self):
         self.N2irgb = Model.make_dict(self.N)
@@ -145,3 +140,15 @@ class Model:
     @staticmethod
     def to_rgb_value(val):
         return np.uint8(int(val > 0) * val * int(val <= 255) + 255 * int(val > 255))
+
+    @staticmethod
+    def make_resize(img_sizes: list, dim):
+        for i in range(len(img_sizes)):
+            w, h = img_sizes[i]
+            if w < dim and h < dim:
+                continue
+            if w > h:
+                return tuple([int(dim), int(h / w * dim)])
+            else:
+                return tuple([int(w / h * dim), int(dim)])
+        return img_sizes[0]

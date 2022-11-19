@@ -3,9 +3,13 @@ import numpy as np
 from uni.matmod.model import Model as mm
 
 
-def create_border_file(N, lax: list, lbx: list, lay: list, lby: list, lx=mm.max_dim, ly=mm.max_dim):
+def create_border_file(N, lax: list, lbx: list, lay: list, lby: list, sizes=None, xsz=mm.max_dim, ysz=mm.max_dim):
     pics = mm.get_pic_amount(N)
     p2val = mm.make_dict(N)
+    if sizes:
+        ly, lx = mm.make_resize(sizes, mm.max_dim)
+    else:
+        ly, lx = xsz, ysz
     ax = np.zeros((pics, ly, 3), dtype=np.uint8)
     bx = np.zeros((pics, ly, 3), dtype=np.uint8)
     ay = np.zeros((pics, lx, 3), dtype=np.uint8)
@@ -27,8 +31,24 @@ def create_border_file(N, lax: list, lbx: list, lay: list, lby: list, lx=mm.max_
 
 if __name__ == "__main__":
     # paste actual functions here
-    lax = [lambda: 10, lambda: 0]
+
+    # y
+    # ^        _____________________
+    # |        |        ^          |
+    # | ay ->  |        |          | <- by
+    # |        |       bx          |
+    # |        _____________________ 
+    # |                ^
+    # |                |
+    # |               ax
+    #  -----------------------------------> x
+
+    lax = [lambda: 200, lambda: 200]
     lay = [lambda: 15, lambda: 190]
-    lbx = [lambda: 3, lambda: 0]
+    lbx = [lambda: 250, lambda: 200]
     lby = [lambda: 250, lambda: 3]
-    create_border_file(N=2, lax=lax, lay=lay, lby=lby, lbx=lbx)
+
+    # paste target images sizes (w, h) here
+    sizes = [(96, 72)]
+
+    create_border_file(N=2, lax=lax, lay=lay, lby=lby, lbx=lbx, sizes=sizes)
