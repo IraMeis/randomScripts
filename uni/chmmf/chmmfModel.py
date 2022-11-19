@@ -101,14 +101,23 @@ class ChmmfModel:
 
         return matrix
 
-    def showPlotsByT(self, matrix, ind: list, ylim=None, xlim=None, grid=False):
+    def showPlotsByCoordinate(self, matrix, ind: list, coordinate='t', ylim=None, xlim=None, grid=False):
         fig = plt.figure()
-        r = np.linspace(0, self.R, self.amount_I + 1)
-        for i in ind:
-            plt.plot(r, matrix[i], label="t = " + str(i * self.T / self.amount_K))
-            plt.legend()
-        plt.ylabel('u(r, t)')
-        plt.xlabel('r')
+        if coordinate == 't':
+            r = np.linspace(0, self.R, self.amount_I + 1)
+            for i in ind:
+                plt.plot(r, matrix[i], label="t = " + str(i * self.T / self.amount_K))
+                plt.legend()
+            plt.ylabel('u(r, t)')
+            plt.xlabel('r')
+        elif coordinate == 'r':
+            res = matrix.transpose()
+            t = np.linspace(0, self.T, self.amount_K + 1)
+            for i in ind:
+                plt.plot(t, res[i], label="r = " + str(i * self.R / self.amount_I))
+                plt.legend()
+            plt.ylabel('u(r, t)')
+            plt.xlabel('t')
         if ylim:
             plt.ylim(ylim)
         if xlim:
@@ -117,19 +126,3 @@ class ChmmfModel:
             plt.grid()
         return fig
 
-    def showPlotsByR(self, matrix, ind: list, ylim=None, xlim=None, grid=False):
-        fig = plt.figure()
-        res = matrix.transpose()
-        t = np.linspace(0, self.T, self.amount_K + 1)
-        for i in ind:
-            plt.plot(t, res[i], label="r = " + str(i * self.R / self.amount_I))
-            plt.legend()
-        plt.ylabel('u(r, t)')
-        plt.xlabel('t')
-        if ylim:
-            plt.ylim(ylim)
-        if xlim:
-            plt.xlim(xlim)
-        if grid:
-            plt.grid()
-        return fig

@@ -23,55 +23,29 @@ def parse_request_for_model(data: dict):
     return ChmmfModel(R=R, T=T, k=k, c=c, amount_I=aI, amount_K=aK)
 
 
-@app.route('/api/chmmf/t', methods=["POST"])
+@app.route('/api/chmmf/<coordinate>', methods=["POST"])
 @cross_origin()
-def model_by_t():
+def model_by_coordinate(coordinate):
     data = request.form.to_dict()
     isx = bool(int(data["isxlim"]))
     isy = bool(int(data["isylim"]))
-    ind = list(map(int, data["indt"].split(',')))
+    ind = list(map(int, data["ind"].split(',')))
 
     model = parse_request_for_model(data)
     matrix = model.schema_solution()
 
     if isy and isx:
-        plt = model.showPlotsByT(matrix=matrix, ind=ind,
-                                 ylim=tuple(map(float, data["ylim"].split(','))),
-                                 xlim=tuple(map(float, data["xlim"].split(','))))
+        plt = model.showPlotsByCoordinate(matrix=matrix, ind=ind, coordinate=coordinate,
+                                          ylim=tuple(map(float, data["ylim"].split(','))),
+                                          xlim=tuple(map(float, data["xlim"].split(','))))
     elif isx:
-        plt = model.showPlotsByT(matrix=matrix, ind=ind, xlim=tuple(map(float, data["xlim"].split(','))))
+        plt = model.showPlotsByCoordinate(matrix=matrix, ind=ind, coordinate=coordinate,
+                                          xlim=tuple(map(float, data["xlim"].split(','))))
     elif isy:
-        plt = model.showPlotsByT(matrix=matrix, ind=ind, ylim=tuple(map(float, data["ylim"].split(','))))
+        plt = model.showPlotsByCoordinate(matrix=matrix, ind=ind, coordinate=coordinate,
+                                          ylim=tuple(map(float, data["ylim"].split(','))))
     else:
-        plt = model.showPlotsByT(matrix=matrix, ind=ind)
-
-    img = io.BytesIO()
-    plt.savefig(img)
-    img.seek(0)
-    return send_file(img, mimetype='image/png')
-
-
-@app.route('/api/chmmf/r', methods=["POST"])
-@cross_origin()
-def model_by_r():
-    data = request.form.to_dict()
-    isx = bool(int(data["isxlim"]))
-    isy = bool(int(data["isylim"]))
-    ind = list(map(int, data["indr"].split(',')))
-
-    model = parse_request_for_model(data)
-    matrix = model.schema_solution()
-
-    if isy and isx:
-        plt = model.showPlotsByR(matrix=matrix, ind=ind,
-                                 ylim=tuple(map(float, data["ylim"].split(','))),
-                                 xlim=tuple(map(float, data["xlim"].split(','))))
-    elif isx:
-        plt = model.showPlotsByR(matrix=matrix, ind=ind, xlim=tuple(map(float, data["xlim"].split(','))))
-    elif isy:
-        plt = model.showPlotsByR(matrix=matrix, ind=ind, ylim=tuple(map(float, data["ylim"].split(','))))
-    else:
-        plt = model.showPlotsByR(matrix=matrix, ind=ind)
+        plt = model.showPlotsByCoordinate(matrix=matrix, ind=ind, coordinate=coordinate)
 
     img = io.BytesIO()
     plt.savefig(img)
