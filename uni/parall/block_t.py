@@ -27,7 +27,7 @@ def mpi_func():
     am1, last1, am2 = get_send_params(dim, size)
 
     if rank == 0:
-        matrixOrig = get_mm_matrix(dim)
+        matrixOrig = get_test_mm_matrix(dim)
         print(matrixOrig)
         print('rank: ', rank)
         print('data: ', np.reshape(np.copy(matrixOrig[0: am1]), (dim * am1)))
