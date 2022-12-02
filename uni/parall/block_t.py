@@ -1,7 +1,8 @@
-# mpiexec -n 3 python block_t.py -dim 7
+# mpiexec -n 3 python block_t.py -cols 4 -rows 3
+# optional args: -file matrix_r3c4.json
+#                -random
+
 import argparse
-import time
-from mpi4py import MPI
 import numpy as np
 
 
@@ -16,23 +17,50 @@ def get_send_params(dim: int, n_proc: int):
     return count_1, total_with_count_1, count_2
 
 
-def get_test_mm_matrix(m: int):
-    return np.reshape(np.arange(m * m, dtype=np.float_), (m, m))
+def get_test_mm_matrix(rows, cols, random):
+    dim = max(cols, rows)
+    matrix = np.zeros((dim, dim), dtype=np.float_)
+    if random:
+        matrix[0:rows, 0:cols] = np.random.uniform(1, 100, [rows, cols])
+    else:
+        matrix[0:rows, 0:cols] = np.reshape(np.arange(rows * cols, dtype=np.float_), (rows, cols))
+    return matrix   
 
 
-def mpi_func(dim: int = None):
+def read_file(rows, cols, path):
+    import json
+    with open(path) as f:
+        data = json.load(f)
+    dcols = data['cols']
+    drows = data['rows']
+    if cols != dcols or rows != drows:
+        raise ValueError
+    dim = max(cols, rows)
+    matrix = np.zeros((dim, dim), dtype=np.float_)
+    matrix[0:rows, 0:cols] = np.array(data['matrix'], dtype=np.float_)
+    return matrix
+
+
+def mpi_func(rows: int, cols: int, random: bool = None, file: str = None):
+    import time
+    from mpi4py import MPI
 
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
     size = comm.Get_size()
 
+    dim = max(rows, cols)
     am1, total1, am2 = get_send_params(dim, size)
     str_num = am1 if rank < total1 else am2
     data = np.empty(str_num * dim, dtype=np.float_)
 
     if rank == 0:
         start = time.perf_counter()
-        matrixOrig = get_test_mm_matrix(dim)
+        if not file:
+            matrixOrig = get_test_mm_matrix(rows, cols, random)
+        else:
+            matrixOrig = read_file(rows, cols, path=file)
+
         print('--- original ---\n', matrixOrig, '\n---')
 
         data = matrixOrig[0: am1]
@@ -90,7 +118,10 @@ def mpi_func(dim: int = None):
 
 if __name__ in "__main__":
     parser = argparse.ArgumentParser(description="mpi line-block matrix transpose")
-    parser.add_argument("-dim", default=None, type=int, help="dimension for test matrix")
-    # parser.add_argument("-file", default=None, type=str, help="json file with actual matrix")
+    parser.add_argument("-cols", default=None, type=int, help="cols number")
+    parser.add_argument("-rows", default=None, type=int, help="rows number")
+    parser.add_argument("-file", default=None, type=str, help="json file with actual matrix")
+    parser.add_argument("-random", action='store_true', help="fill matrix with random numbers if set")
     opt = parser.parse_args()
-    mpi_func(opt.dim)
+    if opt.rows and opt.cols:
+        mpi_func(opt.rows, opt.cols, opt.random, opt.file)
