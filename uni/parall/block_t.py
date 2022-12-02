@@ -1,5 +1,6 @@
 # mpiexec -n 3 python block_t.py -dim 7
 import argparse
+import time
 from mpi4py import MPI
 import numpy as np
 
@@ -30,22 +31,22 @@ def mpi_func(dim: int = None):
     data = np.empty(str_num * dim, dtype=np.float_)
 
     if rank == 0:
+        start = time.perf_counter()
         matrixOrig = get_test_mm_matrix(dim)
-        data = np.copy(matrixOrig[0: am1])
         print('--- original ---\n', matrixOrig, '\n---')
 
+        data = matrixOrig[0: am1]
+
         for i in range(1, total1):
-            comm.Send(np.copy(matrixOrig[i * am1: am1 + i * am1]), dest=i)
+            comm.Send(matrixOrig[i * am1: am1 + i * am1], dest=i)
 
         for i in range(total1, size):
-            comm.Send(np.copy(matrixOrig[total1 * am1 + (i - total1) * am2:
-                                         total1 * am1 + am2 + (i - total1) * am2]), dest=i)
-
+            comm.Send(matrixOrig[total1 * am1 + (i - total1) * am2:
+                                 total1 * am1 + am2 + (i - total1) * am2], dest=i)
     else:
         comm.Recv(data, source=0)
 
     data = np.reshape(data, (str_num, dim))
-    # print('rank: ', rank, '\ndata: ', data)
 
     obj_np_arr = np.empty(size, dtype=object)
     added = 0
@@ -53,7 +54,6 @@ def mpi_func(dim: int = None):
         col_num = am1 if i < total1 else am2
         obj_np_arr[i] = np.copy(data[:, added: added + col_num])
         added += col_num
-
     for i in range(0, size):
         elem = np.transpose(obj_np_arr[i])
         if rank == i:
@@ -62,20 +62,15 @@ def mpi_func(dim: int = None):
             col_num = am1 if i < total1 else am2
             comm.Send(np.reshape(elem, (str_num * col_num)), dest=i)
         del elem
-
     for i in range(0, size):
         if i == rank:
-            pass
-        else:
-            comm.Recv(obj_np_arr[i], source=i)
-    
+            continue
+        comm.Recv(obj_np_arr[i], source=i)
     added = 0
     for i in range(0, size):
         col_num = am1 if i < total1 else am2
         data[:, added: added + col_num] = obj_np_arr[i]
         added += col_num
-        
-    # print('rank: ', rank, '\ndata: ', data)
     
     if rank == 0:
         matrixOrig[0: am1] = data
@@ -87,6 +82,8 @@ def mpi_func(dim: int = None):
             comm.Recv(matrixOrig[total1 * am1 + (i - total1) * am2:
                                  total1 * am1 + am2 + (i - total1) * am2], source=i)
         print('--- transposed ---\n', matrixOrig, '\n---')
+        stop = time.perf_counter()
+        print(f"Calculated in {stop - start:0.5f} seconds")
     else:
         comm.Send(data, dest=0)
 
