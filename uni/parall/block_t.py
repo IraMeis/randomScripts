@@ -61,7 +61,7 @@ def mpi_func(rows: int, cols: int, random: bool = None, file: str = None):
         else:
             matrixOrig = read_file(rows, cols, path=file)
 
-        print('--- original ---\n', matrixOrig, '\n---')
+        # print('--- original ---\n', matrixOrig, '\n---')
 
         data = matrixOrig[0: am1]
 
@@ -109,9 +109,29 @@ def mpi_func(rows: int, cols: int, random: bool = None, file: str = None):
         for i in range(total1, size):
             comm.Recv(matrixOrig[total1 * am1 + (i - total1) * am2:
                                  total1 * am1 + am2 + (i - total1) * am2], source=i)
-        print('--- transposed ---\n', matrixOrig, '\n---')
+        # print('--- transposed ---\n', matrixOrig, '\n---')
         stop = time.perf_counter()
-        print(f"Calculated in {stop - start:0.5f} seconds")
+        t = stop - start
+        print(f"\ncalculated in {t:0.5f} seconds\n")
+
+        start1 = time.perf_counter()
+        matrixOrig.transpose()
+        stop1 = time.perf_counter()
+        t1 = stop1 - start1
+        print(f"np-transpose calculated in {t1:0.5f} seconds")
+
+        start2 = time.perf_counter()
+        for i in range(dim):
+            for j in range(i + 1, dim):
+                val = matrixOrig[i, j]
+                matrixOrig[i, j] = matrixOrig[j, i]
+                matrixOrig[j, i] = val
+        stop2 = time.perf_counter()
+        t2 = stop2 - start2
+        print(f"naive transpose calculated in {t2:0.5f} seconds")
+
+        print(f"acc mpi vs np-transpose is {t1 / t:0.5f}")
+        print(f"acc mpi vs naive transpose is {t2 / t:0.5f}")
     else:
         comm.Send(data, dest=0)
 
